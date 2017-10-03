@@ -20,23 +20,23 @@ import joinMonsterMetadata from './joinMonsterMetadata';
 
 const schema = makeExecutableSchema({
   typeDefs,
-  resolvers,
+  resolvers
 });
 
 joinMonsterAdapt(schema, joinMonsterMetadata);
 
-const SECRET = 'aslkdjlkaj10830912039jlkoaiuwerasdjflkasd';
-
+const SECRET = process.env.SERVER_SECRET;
 const app = express();
 
 passport.use(
   new FacebookStrategy(
     {
-      clientID: process.env.FACEBOOK_CLIENT_ID,
-      clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
-      callbackURL: 'http://localhost:3000/auth/facebook/callback',
+      clientID: process.env.FACEBOOK_CLIENT_LOGIN_APP_ID,
+      clientSecret: process.env.FACEBOOK_CLIENT_LOGIN_APP_SECRET,
+      callbackURL: `${process.env.SERVER_HOST}:${process.env
+        .SERVER_PORT}/auth/facebook/callback`,
       scope: ['email'],
-      profileFields: ['id', 'emails'],
+      profileFields: ['id', 'emails']
     },
     async (accessToken, refreshToken, profile, cb) => {
       // 2 cases
@@ -46,7 +46,7 @@ passport.use(
       const { id, emails: [{ value }] } = profile;
       // []
       let fbUser = await models.User.findOne({
-        where: { $or: [{ fbId: id }, { email: value }] },
+        where: { $or: [{ fbId: id }, { email: value }] }
       });
 
       console.log(fbUser);
@@ -56,19 +56,19 @@ passport.use(
         // case #1
         fbUser = await models.User.create({
           fbId: id,
-          email: value,
+          email: value
         });
       } else if (!fbUser.fbId) {
         // case #3
         // add email to user
         await fbUser.update({
-          fbId: id,
+          fbId: id
         });
       }
 
       cb(null, fbUser);
-    },
-  ),
+    }
+  )
 );
 
 app.use(passport.initialize());
@@ -79,9 +79,16 @@ app.get(
   '/auth/facebook/callback',
   passport.authenticate('facebook', { session: false }),
   async (req, res) => {
-    const [token, refreshToken] = await createTokens(req.user, SECRET, req.user.refreshSecret);
-    res.redirect(`http://localhost:3001/home?token=${token}&refreshToken=${refreshToken}`);
-  },
+    const [token, refreshToken] = await createTokens(
+      req.user,
+      SECRET,
+      req.user.refreshSecret
+    );
+    res.redirect(
+      `${process.env.CLIENT_HOST}:${process.env
+        .CLIENT_PORT}/home?token=${token}&refreshToken=${refreshToken}`
+    );
+  }
 );
 
 const addUser = async (req, res, next) => {
@@ -92,7 +99,12 @@ const addUser = async (req, res, next) => {
       req.user = user;
     } catch (err) {
       const refreshToken = req.headers['x-refresh-token'];
-      const newTokens = await refreshTokens(token, refreshToken, models, SECRET);
+      const newTokens = await refreshTokens(
+        token,
+        refreshToken,
+        models,
+        SECRET
+      );
       if (newTokens.token && newTokens.refreshToken) {
         res.set('Access-Control-Expose-Headers', 'x-token, x-refresh-token');
         res.set('x-token', newTokens.token);
@@ -110,8 +122,8 @@ app.use(addUser);
 app.use(
   '/graphiql',
   graphiqlExpress({
-    endpointURL: '/graphql',
-  }),
+    endpointURL: '/graphql'
+  })
 );
 
 app.use(
@@ -122,13 +134,13 @@ app.use(
     context: {
       models,
       SECRET,
-      user: req.user,
-    },
-  })),
+      user: req.user
+    }
+  }))
 );
 
-if (process.env.ENVIRONMENT !== 'development') {
-  // this must follow the graph(i)ql endpoints
+if (process.env.NODE_ENV !== 'development') {
+  // this declaration must follow the graph(i)ql endpoints
   // first call will load each known route - second is catchall
   app.use(express.static('public'));
   app.use('*', express.static('public'));
@@ -137,17 +149,31 @@ if (process.env.ENVIRONMENT !== 'development') {
 const server = createServer(app);
 
 models.sequelize.sync({ force: true }).then(() =>
-  server.listen(3000, () => {
+  server.listen(process.env.SERVER_PORT, () => {
     new SubscriptionServer(
       {
         execute,
         subscribe,
-        schema,
+        schema
+        // add permissions?
+        // http://dev.apollodata.com/tools/graphql-subscriptions/authentication.html
+        //   onConnect: (connectionParams, webSocket) => {
+        //     if (connectionParams.authToken) {
+        //          return validateToken(connectionParams.authToken)
+        //              .then(findUser(connectionParams.authToken))
+        //              .then((user) => {
+        //                  return {
+        //                      currentUser: user,
+        //                  };
+        //              });
+        //     }
+        //     throw new Error('Missing auth token!');
+        //  }
       },
       {
         server,
-        path: '/subscriptions',
-      },
+        path: '/subscriptions'
+      }
     );
-  }),
+  })
 );

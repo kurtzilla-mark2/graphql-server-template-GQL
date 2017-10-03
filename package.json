@@ -8,7 +8,8 @@
     "start": "nodemon --exec babel-node index.js",
     "pull-dev:remove-public": "exec rimraf public",
     "pull-dev:get-build-dir": "exec cp -R ../gello-world/build ./public",
-    "pull-dev": "npm run pull-dev:remove-public && npm run pull-dev:get-build-dir",
+    "pull-dev":
+      "npm run pull-dev:remove-public && npm run pull-dev:get-build-dir",
     "lint": "eslint src"
   },
   "author": "",
@@ -30,7 +31,8 @@
     "lodash": "^4.17.4",
     "passport": "^0.3.2",
     "passport-facebook": "^2.1.1",
-    "sequelize": "^4.1.0",
+    "pg": "^7.3.0",
+    "sequelize": "^4.10.0",
     "subscriptions-transport-ws": "^0.7.3"
   },
   "devDependencies": {
