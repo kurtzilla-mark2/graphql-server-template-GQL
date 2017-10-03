@@ -8,8 +8,7 @@
     "start": "nodemon --exec babel-node index.js",
     "pull-dev:remove-public": "exec rimraf public",
     "pull-dev:get-build-dir": "exec cp -R ../gello-world/build ./public",
-    "pull-dev":
-      "npm run pull-dev:remove-public && npm run pull-dev:get-build-dir",
+    "pull-dev": "npm run pull-dev:remove-public && npm run pull-dev:get-build-dir",
     "lint": "eslint src"
   },
   "author": "",
@@ -37,8 +36,9 @@
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",
+    "babel-eslint": "^8.0.1",
     "babel-preset-latest": "^6.24.1",
-    "babel-preset-stage-2": "^6.24.1",
+    "babel-preset-stage-3": "^6.24.1",
     "eslint": "^4.8.0",
     "eslint-config-airbnb": "^15.0.1",
     "eslint-config-prettier": "^2.6.0",
